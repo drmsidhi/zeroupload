@@ -3,12 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZeroUpload - Privacy-First In-Browser Image, Signature & Crop Tool</title>
+  <title>ZeroUpload - Privacy-First In-Browser Image, Signature & PDF Suite</title>
+  
+  <!-- OpenGraph / Social Share Meta Tags -->
+  <meta property="og:title" content="ZeroUpload - 100% Private Image & Signature Optimizer">
+  <meta property="og:description" content="Crop, compress to exact KB, clean signatures, and convert to PDF inside your browser with zero uploads.">
+  <meta property="og:type" content="website">
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Cropper.js for Live Crop -->
+  <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <!-- jsPDF for PDF Conversion -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
   <style>
     .cropper-point { background-color: #6366f1; }
     .cropper-line { background-color: #6366f1; }
@@ -22,7 +31,7 @@
       🔒 100% Client-Side • Zero Server Uploads
     </div>
     <h1 class="text-4xl font-extrabold tracking-tight text-white">Zero<span class="text-indigo-400">Upload</span></h1>
-    <p class="text-slate-400 mt-2 text-sm">Resize, crop, compress, and convert photos & signatures securely inside your browser.</p>
+    <p class="text-slate-400 mt-2 text-sm">Resize, live-crop, clean signatures, auto-compress to KB, and export to PDF securely.</p>
   </header>
 
   <!-- Main Container -->
@@ -32,36 +41,34 @@
     <div id="uploadBox" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-8 text-center cursor-pointer transition bg-slate-950/50" onclick="document.getElementById('fileInput').click()">
       <input type="file" id="fileInput" accept="image/*" class="hidden">
       <div class="text-4xl mb-2">📁</div>
-      <p class="font-medium text-slate-200 text-lg">Click to upload or drag & drop</p>
-      <p class="text-xs text-slate-500 mt-1">Supports JPG, PNG, WebP • Max privacy guaranteed</p>
+      <p class="font-medium text-slate-200 text-lg">Click to upload photo, document, or signature</p>
+      <p class="text-xs text-slate-500 mt-1">Supports JPG, PNG, WebP • Nothing leaves your browser</p>
     </div>
 
-    <!-- Workspace Panel (Hidden initially) -->
+    <!-- Workspace Panel -->
     <div id="workspace" class="hidden mt-4 space-y-6">
 
-      <!-- Navigation Tabs (Choose Mode) -->
+      <!-- Navigation Tabs -->
       <div class="flex border-b border-slate-800 pb-2 gap-3">
         <button id="tabResize" type="button" onclick="switchMode('resize')" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2">
-          <span>⚡ Fast Resize & Compress</span>
+          <span>⚡ Fast Resize</span>
         </button>
         <button id="tabCrop" type="button" onclick="switchMode('crop')" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center justify-center gap-2">
-          <span>✂️ Live Crop & Extract</span>
+          <span>✂️ Live Crop & Presets</span>
         </button>
       </div>
 
-      <!-- MODE 1: QUICK RESIZE & COMPRESS (Original Feature) -->
+      <!-- MODE 1: RESIZE -->
       <div id="resizeSection" class="space-y-5">
-        <!-- Preset Dimension Helper -->
         <div>
           <label class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Quick Presets</label>
           <div class="grid grid-cols-3 gap-2 mt-2">
-            <button type="button" onclick="applyPreset(100, 100)" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg border border-slate-700 text-slate-300 transition">Signature (Square)</button>
-            <button type="button" onclick="applyPreset(300, 400)" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg border border-slate-700 text-slate-300 transition">Passport Photo</button>
+            <button type="button" onclick="applyPreset(150, 150)" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg border border-slate-700 text-slate-300 transition">Signature (150x150)</button>
+            <button type="button" onclick="applyPreset(350, 450)" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg border border-slate-700 text-slate-300 transition">Passport Photo</button>
             <button type="button" onclick="resetOriginalDimensions()" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg border border-slate-700 text-slate-300 transition">Original Ratio</button>
           </div>
         </div>
 
-        <!-- Dimensions -->
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="text-xs text-slate-400 font-semibold">Width (px)</label>
@@ -74,17 +81,12 @@
         </div>
       </div>
 
-      <!-- MODE 2: LIVE CROP (New Addition) -->
+      <!-- MODE 2: CROP -->
       <div id="cropSection" class="hidden space-y-4">
-        <div class="flex items-center justify-between">
-          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Drag to select exact crop area</label>
-        </div>
-        
-        <div class="max-h-[360px] overflow-hidden bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center p-2">
+        <div class="max-h-[340px] overflow-hidden bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center p-2">
           <img id="imageToCrop" class="max-w-full block" alt="Source Image">
         </div>
 
-        <!-- Crop Presets -->
         <div class="flex flex-wrap gap-2 pt-1">
           <button type="button" onclick="setAspectRatio(NaN, this)" class="crop-ratio-btn text-xs bg-indigo-600 text-white font-medium py-1.5 px-3 rounded-lg transition border border-indigo-500">Free Crop</button>
           <button type="button" onclick="setAspectRatio(3.5 / 4.5, this)" class="crop-ratio-btn text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700">Passport (3.5 : 4.5)</button>
@@ -94,34 +96,58 @@
         </div>
       </div>
 
-      <!-- COMMON CONTROLS: Compression, Format & Stats -->
+      <!-- ENHANCEMENTS: Filters & Exact KB Target -->
       <div class="border-t border-slate-800 pt-5 space-y-5">
         
+        <!-- Filters (Signature Clean) -->
+        <div class="flex items-center justify-between bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+          <div>
+            <span class="text-sm font-semibold text-slate-200 block">📝 Clean Paper & Signature</span>
+            <span class="text-xs text-slate-500">Boosts contrast and whitens yellow/shadowed document background</span>
+          </div>
+          <input type="checkbox" id="cleanFilterCheck" onchange="triggerCurrentProcess()" class="w-5 h-5 accent-indigo-500 cursor-pointer">
+        </div>
+
+        <!-- Target KB & Quality -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Target KB Lock -->
+          <div>
+            <label class="text-xs text-slate-400 font-semibold flex justify-between">
+              <span>🎯 Target Max Size (KB)</span>
+              <span class="text-indigo-400 font-normal">Optional (e.g. 50 or 20)</span>
+            </label>
+            <div class="flex gap-2 mt-1">
+              <input type="number" id="targetKbInput" placeholder="Auto" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white outline-none focus:border-indigo-500">
+              <button type="button" onclick="setTargetPreset(20)" class="text-xs bg-slate-800 hover:bg-slate-700 px-2.5 rounded-lg border border-slate-700 text-slate-300">20KB</button>
+              <button type="button" onclick="setTargetPreset(50)" class="text-xs bg-slate-800 hover:bg-slate-700 px-2.5 rounded-lg border border-slate-700 text-slate-300">50KB</button>
+            </div>
+          </div>
+
           <!-- Quality Slider -->
           <div>
             <div class="flex justify-between text-xs text-slate-400 font-semibold">
-              <span>Target Quality / Compression</span>
-              <span id="qualityVal" class="text-indigo-400">80%</span>
+              <span>Manual Quality Compression</span>
+              <span id="qualityVal" class="text-indigo-400">85%</span>
             </div>
-            <input type="range" id="qualityInput" min="0.05" max="1" step="0.05" value="0.8" class="w-full mt-2 accent-indigo-500">
+            <input type="range" id="qualityInput" min="0.05" max="1" step="0.05" value="0.85" class="w-full mt-2 accent-indigo-500">
           </div>
+        </div>
 
-          <!-- Format Selection -->
-          <div>
-            <label class="text-xs text-slate-400 font-semibold">Target Format</label>
-            <select id="formatSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 mt-1 text-white outline-none focus:border-indigo-500">
-              <option value="image/jpeg">JPEG (.jpg)</option>
-              <option value="image/png">PNG (.png)</option>
-              <option value="image/webp">WebP (.webp)</option>
-            </select>
-          </div>
+        <!-- Format Selector -->
+        <div>
+          <label class="text-xs text-slate-400 font-semibold">Export Format</label>
+          <select id="formatSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 mt-1 text-white outline-none focus:border-indigo-500">
+            <option value="image/jpeg">JPEG (.jpg)</option>
+            <option value="image/png">PNG (.png)</option>
+            <option value="image/webp">WebP (.webp)</option>
+            <option value="application/pdf">PDF Document (.pdf)</option>
+          </select>
         </div>
 
         <!-- Stats Display -->
         <div class="flex items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 text-sm">
-          <span class="text-slate-400">Original Size: <strong id="origSize" class="text-slate-200">0 KB</strong></span>
-          <span class="text-slate-400">Optimized Size: <strong id="newSize" class="text-emerald-400">0 KB</strong></span>
+          <span class="text-slate-400">Original: <strong id="origSize" class="text-slate-200">0 KB</strong></span>
+          <span class="text-slate-400">Processed Size: <strong id="newSize" class="text-emerald-400">0 KB</strong></span>
         </div>
 
         <!-- Action Buttons -->
@@ -130,7 +156,7 @@
             Change Image
           </button>
           <button id="downloadBtn" class="w-2/3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-            <span>Download Processed File</span>
+            <span>Download Output File</span>
           </button>
         </div>
 
@@ -141,7 +167,7 @@
   </main>
 
   <footer class="mt-8 text-xs text-slate-500 text-center">
-    ZeroUpload • Open-Source & Offline Capable • Fast, Simple & Secure
+    ZeroUpload • 100% In-Browser Crop, KB Compress, Clean & PDF Engine
   </footer>
 
   <script>
@@ -160,12 +186,14 @@
     const qualityInput = document.getElementById('qualityInput');
     const qualityVal = document.getElementById('qualityVal');
     const formatSelect = document.getElementById('formatSelect');
+    const targetKbInput = document.getElementById('targetKbInput');
+    const cleanFilterCheck = document.getElementById('cleanFilterCheck');
     
     const origSize = document.getElementById('origSize');
     const newSize = document.getElementById('newSize');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    let currentMode = 'resize'; // 'resize' or 'crop'
+    let currentMode = 'resize';
     let originalImage = new Image();
     let originalFileSize = 0;
     let originalAspectRatio = 1;
@@ -198,7 +226,6 @@
       reader.readAsDataURL(file);
     });
 
-    // Switch between Resize Mode & Crop Mode
     function switchMode(mode) {
       currentMode = mode;
       if (mode === 'resize') {
@@ -206,11 +233,7 @@
         tabCrop.className = "flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center justify-center gap-2";
         resizeSection.classList.remove('hidden');
         cropSection.classList.add('hidden');
-        
-        if (cropper) {
-          cropper.destroy();
-          cropper = null;
-        }
+        if (cropper) { cropper.destroy(); cropper = null; }
         processResize();
       } else {
         tabCrop.className = "flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2";
@@ -224,9 +247,7 @@
             viewMode: 1,
             autoCropArea: 0.9,
             responsive: true,
-            crop() {
-              processCrop();
-            }
+            crop() { processCrop(); }
           });
         } else {
           processCrop();
@@ -234,7 +255,6 @@
       }
     }
 
-    // --- RESIZE MODE FUNCTIONS ---
     widthInput.addEventListener('input', () => {
       if (currentMode === 'resize') {
         heightInput.value = Math.round(widthInput.value / originalAspectRatio);
@@ -261,26 +281,16 @@
       processResize();
     }
 
-    function processResize() {
-      if (currentMode !== 'resize') return;
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      const targetW = parseInt(widthInput.value) || originalImage.naturalWidth;
-      const targetH = parseInt(heightInput.value) || originalImage.naturalHeight;
-
-      canvas.width = targetW;
-      canvas.height = targetH;
-      ctx.drawImage(originalImage, 0, 0, targetW, targetH);
-
-      renderOutput(canvas);
+    function setTargetPreset(kb) {
+      targetKbInput.value = kb;
+      triggerCurrentProcess();
     }
 
-    // --- CROP MODE FUNCTIONS ---
+    targetKbInput.addEventListener('input', triggerCurrentProcess);
+
     function setAspectRatio(ratio, btnElement) {
       if (!cropper) return;
       cropper.setAspectRatio(ratio);
-
       document.querySelectorAll('.crop-ratio-btn').forEach(btn => {
         btn.className = "crop-ratio-btn text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700";
       });
@@ -293,20 +303,9 @@
       processCrop();
     }
 
-    function processCrop() {
-      if (currentMode !== 'crop' || !cropper) return;
-      const croppedCanvas = cropper.getCroppedCanvas({
-        imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'high'
-      });
-      if (croppedCanvas) {
-        renderOutput(croppedCanvas);
-      }
-    }
-
-    // --- COMMON PROCESSING & DOWNLOAD ---
     qualityInput.addEventListener('input', () => {
       qualityVal.textContent = Math.round(qualityInput.value * 100) + '%';
+      targetKbInput.value = ''; // clear target KB if slider manually touched
       triggerCurrentProcess();
     });
 
@@ -317,22 +316,114 @@
       else processCrop();
     }
 
-    function renderOutput(canvas) {
-      const format = formatSelect.value;
-      const quality = parseFloat(qualityInput.value);
+    function applySignatureFilter(canvas) {
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
 
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        newSize.textContent = (blob.size / 1024).toFixed(1) + ' KB';
+      // High contrast B&W threshold algorithm
+      for (let i = 0; i < data.length; i += 4) {
+        const avg = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+        // Contrast curve: push light backgrounds to pure white, ink to dark
+        const factor = 1.35;
+        let newVal = factor * (avg - 128) + 128;
+        if (newVal > 175) newVal = 255; // clean background to white
+        else if (newVal < 100) newVal = newVal * 0.7; // darken ink
 
+        data[i] = newVal;
+        data[i + 1] = newVal;
+        data[i + 2] = newVal;
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function processResize() {
+      if (currentMode !== 'resize') return;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      const targetW = parseInt(widthInput.value) || originalImage.naturalWidth;
+      const targetH = parseInt(heightInput.value) || originalImage.naturalHeight;
+
+      canvas.width = targetW;
+      canvas.height = targetH;
+      ctx.drawImage(originalImage, 0, 0, targetW, targetH);
+
+      if (cleanFilterCheck.checked) applySignatureFilter(canvas);
+      renderOutput(canvas);
+    }
+
+    function processCrop() {
+      if (currentMode !== 'crop' || !cropper) return;
+      const croppedCanvas = cropper.getCroppedCanvas({
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high'
+      });
+      if (!croppedCanvas) return;
+
+      if (cleanFilterCheck.checked) applySignatureFilter(croppedCanvas);
+      renderOutput(croppedCanvas);
+    }
+
+    async function renderOutput(canvas) {
+      const selectedFormat = formatSelect.value;
+      const isPDF = selectedFormat === 'application/pdf';
+      const format = isPDF ? 'image/jpeg' : selectedFormat;
+
+      const targetKb = parseFloat(targetKbInput.value);
+
+      let finalBlob = null;
+
+      // Binary Search Auto-Compression if target KB is set
+      if (targetKb && targetKb > 0) {
+        let minQ = 0.05, maxQ = 0.98, bestBlob = null;
+        for (let i = 0; i < 6; i++) {
+          const midQ = (minQ + maxQ) / 2;
+          const blob = await new Promise(res => canvas.toBlob(res, format, midQ));
+          if (!blob) break;
+          const sizeKb = blob.size / 1024;
+          bestBlob = blob;
+          if (sizeKb > targetKb) {
+            maxQ = midQ;
+          } else {
+            minQ = midQ;
+          }
+        }
+        finalBlob = bestBlob;
+      } else {
+        const quality = parseFloat(qualityInput.value);
+        finalBlob = await new Promise(res => canvas.toBlob(res, format, quality));
+      }
+
+      if (!finalBlob) return;
+
+      if (isPDF) {
+        newSize.textContent = `~${(finalBlob.size / 1024).toFixed(1)} KB (PDF)`;
+        downloadBtn.onclick = () => exportToPdf(canvas);
+      } else {
+        newSize.textContent = (finalBlob.size / 1024).toFixed(1) + ' KB';
         downloadBtn.onclick = () => {
           const link = document.createElement('a');
           const ext = format.split('/')[1] === 'jpeg' ? 'jpg' : format.split('/')[1];
-          link.href = URL.createObjectURL(blob);
+          link.href = URL.createObjectURL(finalBlob);
           link.download = `zeroupload-${currentMode}-${Date.now()}.${ext}`;
           link.click();
         };
-      }, format, quality);
+      }
+    }
+
+    function exportToPdf(canvas) {
+      const { jsPDF } = window.jspdf;
+      const orientation = canvas.width > canvas.height ? 'landscape' : 'portrait';
+      const pdf = new jsPDF({
+        orientation: orientation,
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`zeroupload-document-${Date.now()}.pdf`);
     }
 
     function resetAll() {
@@ -341,6 +432,8 @@
         cropper = null;
       }
       fileInput.value = '';
+      targetKbInput.value = '';
+      cleanFilterCheck.checked = false;
       workspace.classList.add('hidden');
       uploadBox.classList.remove('hidden');
     }

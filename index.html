@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="manifest" href="manifest.json">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZeroUpload - Privacy-First In-Browser Image, Signature & PDF Suite</title>
+  <title>ZeroUpload - Privacy-First Image, Crop, PDF & Icon Suite</title>
   
-  <!-- OpenGraph / Social Share Meta Tags -->
+  <link rel="manifest" href="manifest.json">
   <meta property="og:title" content="ZeroUpload - 100% Private Image & Signature Optimizer">
-  <meta property="og:description" content="Crop, compress to exact KB, clean signatures, and convert to PDF inside your browser with zero uploads.">
+  <meta property="og:description" content="Crop, compress to exact KB, clean signatures, generate app icons, and export to PDF.">
   <meta property="og:type" content="website">
 
   <!-- Tailwind CSS -->
@@ -27,29 +26,39 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 flex flex-col items-center">
 
   <!-- Header -->
-  <header class="text-center max-w-xl my-4">
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-3">
+  <header class="text-center max-w-xl my-3">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-2">
       🔒 100% Client-Side • Zero Server Uploads
     </div>
     <h1 class="text-4xl font-extrabold tracking-tight text-white">Zero<span class="text-indigo-400">Upload</span></h1>
-    <p class="text-slate-400 mt-2 text-sm">Resize, live-crop, clean signatures, auto-compress to KB, and export to PDF securely.</p>
+    <p class="text-slate-400 mt-1 text-sm">Resize, live-crop, clean signatures, generate app icons, & export to PDF securely.</p>
   </header>
 
-  <!-- Main Container -->
-  <main class="w-full max-w-3xl bg-slate-900 p-5 md:p-7 rounded-2xl shadow-2xl border border-slate-800">
+  <!-- Top Main Navigation (Optimizer vs Icon Maker) -->
+  <div class="w-full max-w-3xl flex bg-slate-900 p-1 rounded-xl border border-slate-800 mb-4">
+    <button id="mainTabOptimizer" onclick="switchMainView('optimizer')" class="flex-1 py-2 rounded-lg font-semibold text-sm transition bg-indigo-600 text-white shadow">
+      🖼️ Image & Signature Optimizer
+    </button>
+    <button id="mainTabIconMaker" onclick="switchMainView('iconMaker')" class="flex-1 py-2 rounded-lg font-semibold text-sm transition text-slate-400 hover:text-white">
+      🎨 Built-in Icon Maker
+    </button>
+  </div>
+
+  <!-- VIEW 1: IMAGE / SIGNATURE OPTIMIZER -->
+  <main id="optimizerView" class="w-full max-w-3xl bg-slate-900 p-5 md:p-7 rounded-2xl shadow-2xl border border-slate-800">
     
     <!-- Upload Area -->
     <div id="uploadBox" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-8 text-center cursor-pointer transition bg-slate-950/50" onclick="document.getElementById('fileInput').click()">
       <input type="file" id="fileInput" accept="image/*" class="hidden">
       <div class="text-4xl mb-2">📁</div>
       <p class="font-medium text-slate-200 text-lg">Click to upload photo, document, or signature</p>
-      <p class="text-xs text-slate-500 mt-1">Supports JPG, PNG, WebP • Nothing leaves your browser</p>
+      <p class="text-xs text-slate-500 mt-1">Supports JPG, PNG, WebP • 100% Offline Processing</p>
     </div>
 
     <!-- Workspace Panel -->
     <div id="workspace" class="hidden mt-4 space-y-6">
 
-      <!-- Navigation Tabs -->
+      <!-- Navigation Sub-Tabs -->
       <div class="flex border-b border-slate-800 pb-2 gap-3">
         <button id="tabResize" type="button" onclick="switchMode('resize')" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2">
           <span>⚡ Fast Resize</span>
@@ -97,10 +106,10 @@
         </div>
       </div>
 
-      <!-- ENHANCEMENTS: Filters & Exact KB Target -->
+      <!-- FILTERS, COMPRESSION & PDF -->
       <div class="border-t border-slate-800 pt-5 space-y-5">
         
-        <!-- Filters (Signature Clean) -->
+        <!-- Clean Signature -->
         <div class="flex items-center justify-between bg-slate-950/70 p-3 rounded-xl border border-slate-800">
           <div>
             <span class="text-sm font-semibold text-slate-200 block">📝 Clean Paper & Signature</span>
@@ -109,13 +118,12 @@
           <input type="checkbox" id="cleanFilterCheck" onchange="triggerCurrentProcess()" class="w-5 h-5 accent-indigo-500 cursor-pointer">
         </div>
 
-        <!-- Target KB & Quality -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Target KB Lock -->
           <div>
             <label class="text-xs text-slate-400 font-semibold flex justify-between">
               <span>🎯 Target Max Size (KB)</span>
-              <span class="text-indigo-400 font-normal">Optional (e.g. 50 or 20)</span>
+              <span class="text-indigo-400 font-normal">Auto Binary Search</span>
             </label>
             <div class="flex gap-2 mt-1">
               <input type="number" id="targetKbInput" placeholder="Auto" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white outline-none focus:border-indigo-500">
@@ -148,7 +156,7 @@
         <!-- Stats Display -->
         <div class="flex items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 text-sm">
           <span class="text-slate-400">Original: <strong id="origSize" class="text-slate-200">0 KB</strong></span>
-          <span class="text-slate-400">Processed Size: <strong id="newSize" class="text-emerald-400">0 KB</strong></span>
+          <span class="text-slate-400">Processed: <strong id="newSize" class="text-emerald-400">0 KB</strong></span>
         </div>
 
         <!-- Action Buttons -->
@@ -167,11 +175,190 @@
 
   </main>
 
+  <!-- VIEW 2: BUILT-IN APP ICON MAKER STUDIO -->
+  <main id="iconMakerView" class="hidden w-full max-w-3xl bg-slate-900 p-5 md:p-7 rounded-2xl shadow-2xl border border-slate-800 space-y-6">
+    
+    <div>
+      <h2 class="text-lg font-bold text-white">🎨 App Icon Generator Studio</h2>
+      <p class="text-xs text-slate-400">Create crisp 512x512 app icons directly inside your browser for your APK & PWA manifest.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+      
+      <!-- Live Preview Canvas -->
+      <div class="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl border border-slate-800">
+        <canvas id="iconCanvas" width="512" height="512" class="w-44 h-44 shadow-2xl rounded-3xl border border-slate-700/50"></canvas>
+        <span class="text-xs text-slate-500 mt-3">Live 512x512 PWA & APK Preview</span>
+      </div>
+
+      <!-- Controls -->
+      <div class="space-y-4">
+        
+        <!-- Symbol / Emoji Selection -->
+        <div>
+          <label class="text-xs text-slate-400 font-semibold">Icon Symbol (Emoji or Text)</label>
+          <div class="flex gap-2 mt-1">
+            <input type="text" id="iconSymbolInput" value="⚡" maxlength="2" class="w-20 text-center text-xl bg-slate-800 border border-slate-700 rounded-lg p-2 text-white outline-none focus:border-indigo-500">
+            <div class="flex flex-wrap gap-1.5 items-center">
+              <button type="button" onclick="setIconEmoji('⚡')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-sm">⚡</button>
+              <button type="button" onclick="setIconEmoji('✂️')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-sm">✂️</button>
+              <button type="button" onclick="setIconEmoji('🔒')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-sm">🔒</button>
+              <button type="button" onclick="setIconEmoji('📸')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-sm">📸</button>
+              <button type="button" onclick="setIconEmoji('🚀')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-sm">🚀</button>
+              <button type="button" onclick="setIconEmoji('🛡️')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-sm">🛡️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Background Gradient Style -->
+        <div>
+          <label class="text-xs text-slate-400 font-semibold">Background Theme</label>
+          <div class="grid grid-cols-2 gap-2 mt-1.5">
+            <button type="button" onclick="setIconTheme('#4f46e5', '#0f172a')" class="text-xs py-2 px-3 rounded-lg border border-indigo-500/50 bg-gradient-to-br from-indigo-600 to-slate-900 text-white font-medium">Indigo Slate</button>
+            <button type="button" onclick="setIconTheme('#10b981', '#064e3b')" class="text-xs py-2 px-3 rounded-lg border border-emerald-500/50 bg-gradient-to-br from-emerald-500 to-emerald-950 text-white font-medium">Emerald Mint</button>
+            <button type="button" onclick="setIconTheme('#f43f5e', '#881337')" class="text-xs py-2 px-3 rounded-lg border border-rose-500/50 bg-gradient-to-br from-rose-500 to-rose-950 text-white font-medium">Crimson Glow</button>
+            <button type="button" onclick="setIconTheme('#06b6d4', '#3b82f6')" class="text-xs py-2 px-3 rounded-lg border border-cyan-500/50 bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-medium">Cyber Blue</button>
+          </div>
+        </div>
+
+        <!-- Shape / Corner Radius -->
+        <div>
+          <div class="flex justify-between text-xs text-slate-400 font-semibold">
+            <span>Corner Roundness</span>
+            <span id="radiusVal" class="text-indigo-400">120px</span>
+          </div>
+          <input type="range" id="radiusInput" min="0" max="256" value="120" class="w-full mt-1 accent-indigo-500">
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Export Buttons -->
+    <div class="border-t border-slate-800 pt-4 flex flex-col sm:flex-row gap-3">
+      <button type="button" onclick="downloadIcon(512, 'icon-512.png')" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+        <span>📥 Download 512x512 Icon (icon-512.png)</span>
+      </button>
+      <button type="button" onclick="downloadIcon(192, 'icon-192.png')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2">
+        <span>📥 Download 192x192 Icon</span>
+      </button>
+    </div>
+
+  </main>
+
   <footer class="mt-8 text-xs text-slate-500 text-center">
-    ZeroUpload • 100% In-Browser Crop, KB Compress, Clean & PDF Engine
+    ZeroUpload • 100% In-Browser Privacy Suite & App Studio
   </footer>
 
   <script>
+    // --- MAIN VIEW TABS ---
+    const optimizerView = document.getElementById('optimizerView');
+    const iconMakerView = document.getElementById('iconMakerView');
+    const mainTabOptimizer = document.getElementById('mainTabOptimizer');
+    const mainTabIconMaker = document.getElementById('mainTabIconMaker');
+
+    function switchMainView(view) {
+      if (view === 'optimizer') {
+        optimizerView.classList.remove('hidden');
+        iconMakerView.classList.add('hidden');
+        mainTabOptimizer.className = "flex-1 py-2 rounded-lg font-semibold text-sm transition bg-indigo-600 text-white shadow";
+        mainTabIconMaker.className = "flex-1 py-2 rounded-lg font-semibold text-sm transition text-slate-400 hover:text-white";
+      } else {
+        optimizerView.classList.add('hidden');
+        iconMakerView.classList.remove('hidden');
+        mainTabIconMaker.className = "flex-1 py-2 rounded-lg font-semibold text-sm transition bg-indigo-600 text-white shadow";
+        mainTabOptimizer.className = "flex-1 py-2 rounded-lg font-semibold text-sm transition text-slate-400 hover:text-white";
+        drawIconCanvas();
+      }
+    }
+
+    // --- ICON MAKER ENGINE ---
+    const iconCanvas = document.getElementById('iconCanvas');
+    const iconCtx = iconCanvas.getContext('2d');
+    const iconSymbolInput = document.getElementById('iconSymbolInput');
+    const radiusInput = document.getElementById('radiusInput');
+    const radiusVal = document.getElementById('radiusVal');
+
+    let currentGradientStart = '#4f46e5';
+    let currentGradientEnd = '#0f172a';
+
+    function setIconEmoji(emoji) {
+      iconSymbolInput.value = emoji;
+      drawIconCanvas();
+    }
+
+    function setIconTheme(start, end) {
+      currentGradientStart = start;
+      currentGradientEnd = end;
+      drawIconCanvas();
+    }
+
+    iconSymbolInput.addEventListener('input', drawIconCanvas);
+    radiusInput.addEventListener('input', () => {
+      radiusVal.textContent = radiusInput.value + 'px';
+      drawIconCanvas();
+    });
+
+    function drawIconCanvas(targetCanvas = iconCanvas, size = 512) {
+      const ctx = targetCanvas.getContext('2d');
+      const w = size;
+      const h = size;
+      const radius = (parseInt(radiusInput.value) / 512) * size;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Rounded path
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(w - radius, 0);
+      ctx.quadraticCurveTo(w, 0, w, radius);
+      ctx.lineTo(w, h - radius);
+      ctx.quadraticCurveTo(w, h, w - radius, h);
+      ctx.lineTo(radius, h);
+      ctx.quadraticCurveTo(0, h, 0, h - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.clip();
+
+      // Background Gradient
+      const grad = ctx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, currentGradientStart);
+      grad.addColorStop(1, currentGradientEnd);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Inner subtle glow border
+      ctx.lineWidth = size * 0.02;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.stroke();
+
+      // Draw Emoji / Symbol
+      const symbol = iconSymbolInput.value || '⚡';
+      ctx.font = `${size * 0.45}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      ctx.shadowBlur = size * 0.05;
+      ctx.fillText(symbol, w / 2, h / 2 + (size * 0.03));
+      ctx.shadowBlur = 0; // reset
+    }
+
+    function downloadIcon(size, filename) {
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = size;
+      exportCanvas.height = size;
+      drawIconCanvas(exportCanvas, size);
+
+      exportCanvas.toBlob((blob) => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+      }, 'image/png');
+    }
+
+    // --- OPTIMIZER / RESIZER ENGINE ---
     const fileInput = document.getElementById('fileInput');
     const uploadBox = document.getElementById('uploadBox');
     const workspace = document.getElementById('workspace');
@@ -306,7 +493,7 @@
 
     qualityInput.addEventListener('input', () => {
       qualityVal.textContent = Math.round(qualityInput.value * 100) + '%';
-      targetKbInput.value = ''; // clear target KB if slider manually touched
+      targetKbInput.value = '';
       triggerCurrentProcess();
     });
 
@@ -322,14 +509,12 @@
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imgData.data;
 
-      // High contrast B&W threshold algorithm
       for (let i = 0; i < data.length; i += 4) {
         const avg = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-        // Contrast curve: push light backgrounds to pure white, ink to dark
         const factor = 1.35;
         let newVal = factor * (avg - 128) + 128;
-        if (newVal > 175) newVal = 255; // clean background to white
-        else if (newVal < 100) newVal = newVal * 0.7; // darken ink
+        if (newVal > 175) newVal = 255;
+        else if (newVal < 100) newVal = newVal * 0.7;
 
         data[i] = newVal;
         data[i + 1] = newVal;
@@ -372,10 +557,8 @@
       const format = isPDF ? 'image/jpeg' : selectedFormat;
 
       const targetKb = parseFloat(targetKbInput.value);
-
       let finalBlob = null;
 
-      // Binary Search Auto-Compression if target KB is set
       if (targetKb && targetKb > 0) {
         let minQ = 0.05, maxQ = 0.98, bestBlob = null;
         for (let i = 0; i < 6; i++) {
@@ -438,6 +621,11 @@
       workspace.classList.add('hidden');
       uploadBox.classList.remove('hidden');
     }
+
+    // Initialize icon preview on load
+    window.addEventListener('DOMContentLoaded', () => {
+      drawIconCanvas();
+    });
   </script>
 </body>
 </html>

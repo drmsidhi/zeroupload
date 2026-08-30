@@ -1,0 +1,17 @@
+{
+  "name": "ZeroUpload",
+  "short_name": "ZeroUpload",
+  "start_url": "/zeroupload/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#4f46e5",
+  "description": "Privacy-First In-Browser Image, Signature & PDF Suite",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3389/3389024.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

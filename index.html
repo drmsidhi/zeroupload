@@ -3,23 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZeroUpload - Privacy-First In-Browser Image & Signature Optimizer</title>
+  <title>ZeroUpload - Privacy-First In-Browser Image, Signature & Crop Tool</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Cropper.js CSS & JS -->
+  <!-- Cropper.js for Live Crop -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
   <style>
-    /* Cropper Container styling */
-    .cropper-view-box, .cropper-face {
-      border-radius: 4px;
-    }
-    .cropper-point {
-      background-color: #6366f1;
-    }
-    .cropper-line {
-      background-color: #6366f1;
-    }
+    .cropper-point { background-color: #6366f1; }
+    .cropper-line { background-color: #6366f1; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 flex flex-col items-center">
@@ -30,7 +22,7 @@
       🔒 100% Client-Side • Zero Server Uploads
     </div>
     <h1 class="text-4xl font-extrabold tracking-tight text-white">Zero<span class="text-indigo-400">Upload</span></h1>
-    <p class="text-slate-400 mt-2 text-sm">Crop, resize, compress, and convert photos & signatures securely in your browser.</p>
+    <p class="text-slate-400 mt-2 text-sm">Resize, crop, compress, and convert photos & signatures securely inside your browser.</p>
   </header>
 
   <!-- Main Container -->
@@ -39,62 +31,85 @@
     <!-- Upload Area -->
     <div id="uploadBox" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-8 text-center cursor-pointer transition bg-slate-950/50" onclick="document.getElementById('fileInput').click()">
       <input type="file" id="fileInput" accept="image/*" class="hidden">
-      <div class="text-4xl mb-2">✂️</div>
-      <p class="font-medium text-slate-200 text-lg">Click to upload photo or signature</p>
-      <p class="text-xs text-slate-500 mt-1">Supports JPG, PNG, WebP • No files leave your device</p>
+      <div class="text-4xl mb-2">📁</div>
+      <p class="font-medium text-slate-200 text-lg">Click to upload or drag & drop</p>
+      <p class="text-xs text-slate-500 mt-1">Supports JPG, PNG, WebP • Max privacy guaranteed</p>
     </div>
 
     <!-- Workspace Panel (Hidden initially) -->
-    <div id="workspace" class="hidden mt-6 space-y-6">
+    <div id="workspace" class="hidden mt-4 space-y-6">
 
-      <!-- Image / Cropper Container -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between">
-          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wider">1. Live Crop & Area Select</label>
-          <span class="text-xs text-indigo-400">Drag edges to adjust crop box</span>
-        </div>
-        
-        <div class="max-h-[380px] overflow-hidden bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center p-2">
-          <img id="imageToCrop" class="max-w-full block" alt="Source Image">
-        </div>
-
-        <!-- Crop Aspect Ratio Presets -->
-        <div class="flex flex-wrap gap-2 pt-1">
-          <button type="button" onclick="setAspectRatio(NaN)" class="ratio-btn text-xs bg-indigo-600 text-white font-medium py-1.5 px-3 rounded-lg transition border border-indigo-500">Free Crop</button>
-          <button type="button" onclick="setAspectRatio(3.5 / 4.5)" class="ratio-btn text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700">Passport Photo (3.5 : 4.5)</button>
-          <button type="button" onclick="setAspectRatio(2 / 1)" class="ratio-btn text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700">Signature (2 : 1)</button>
-          <button type="button" onclick="setAspectRatio(1)" class="ratio-btn text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700">Square 1:1</button>
-          <button type="button" onclick="rotateImage(90)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700 ml-auto">🔄 Rotate</button>
-        </div>
+      <!-- Navigation Tabs (Choose Mode) -->
+      <div class="flex border-b border-slate-800 pb-2 gap-3">
+        <button id="tabResize" type="button" onclick="switchMode('resize')" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2">
+          <span>⚡ Fast Resize & Compress</span>
+        </button>
+        <button id="tabCrop" type="button" onclick="switchMode('crop')" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center justify-center gap-2">
+          <span>✂️ Live Crop & Extract</span>
+        </button>
       </div>
 
-      <div class="border-t border-slate-800 pt-5 space-y-5">
-        <label class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">2. Output Dimensions & Compression</label>
-        
-        <!-- Width / Height Inputs -->
+      <!-- MODE 1: QUICK RESIZE & COMPRESS (Original Feature) -->
+      <div id="resizeSection" class="space-y-5">
+        <!-- Preset Dimension Helper -->
+        <div>
+          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Quick Presets</label>
+          <div class="grid grid-cols-3 gap-2 mt-2">
+            <button type="button" onclick="applyPreset(100, 100)" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg border border-slate-700 text-slate-300 transition">Signature (Square)</button>
+            <button type="button" onclick="applyPreset(300, 400)" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg border border-slate-700 text-slate-300 transition">Passport Photo</button>
+            <button type="button" onclick="resetOriginalDimensions()" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg border border-slate-700 text-slate-300 transition">Original Ratio</button>
+          </div>
+        </div>
+
+        <!-- Dimensions -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="text-xs text-slate-400 font-semibold">Output Width (px)</label>
+            <label class="text-xs text-slate-400 font-semibold">Width (px)</label>
             <input type="number" id="widthInput" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 mt-1 text-white outline-none focus:border-indigo-500">
           </div>
           <div>
-            <label class="text-xs text-slate-400 font-semibold">Output Height (px)</label>
+            <label class="text-xs text-slate-400 font-semibold">Height (px)</label>
             <input type="number" id="heightInput" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 mt-1 text-white outline-none focus:border-indigo-500">
           </div>
         </div>
+      </div>
 
-        <!-- Target Size & Quality Controls -->
+      <!-- MODE 2: LIVE CROP (New Addition) -->
+      <div id="cropSection" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <label class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Drag to select exact crop area</label>
+        </div>
+        
+        <div class="max-h-[360px] overflow-hidden bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center p-2">
+          <img id="imageToCrop" class="max-w-full block" alt="Source Image">
+        </div>
+
+        <!-- Crop Presets -->
+        <div class="flex flex-wrap gap-2 pt-1">
+          <button type="button" onclick="setAspectRatio(NaN, this)" class="crop-ratio-btn text-xs bg-indigo-600 text-white font-medium py-1.5 px-3 rounded-lg transition border border-indigo-500">Free Crop</button>
+          <button type="button" onclick="setAspectRatio(3.5 / 4.5, this)" class="crop-ratio-btn text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700">Passport (3.5 : 4.5)</button>
+          <button type="button" onclick="setAspectRatio(2 / 1, this)" class="crop-ratio-btn text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700">Signature (2 : 1)</button>
+          <button type="button" onclick="setAspectRatio(1, this)" class="crop-ratio-btn text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700">Square 1:1</button>
+          <button type="button" onclick="rotateCrop(90)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700 ml-auto">🔄 Rotate</button>
+        </div>
+      </div>
+
+      <!-- COMMON CONTROLS: Compression, Format & Stats -->
+      <div class="border-t border-slate-800 pt-5 space-y-5">
+        
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Quality Slider -->
           <div>
             <div class="flex justify-between text-xs text-slate-400 font-semibold">
-              <span>Quality Compression</span>
-              <span id="qualityVal" class="text-indigo-400">85%</span>
+              <span>Target Quality / Compression</span>
+              <span id="qualityVal" class="text-indigo-400">80%</span>
             </div>
-            <input type="range" id="qualityInput" min="0.05" max="1" step="0.05" value="0.85" class="w-full mt-2 accent-indigo-500">
+            <input type="range" id="qualityInput" min="0.05" max="1" step="0.05" value="0.8" class="w-full mt-2 accent-indigo-500">
           </div>
 
+          <!-- Format Selection -->
           <div>
-            <label class="text-xs text-slate-400 font-semibold">Export Format</label>
+            <label class="text-xs text-slate-400 font-semibold">Target Format</label>
             <select id="formatSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 mt-1 text-white outline-none focus:border-indigo-500">
               <option value="image/jpeg">JPEG (.jpg)</option>
               <option value="image/png">PNG (.png)</option>
@@ -105,17 +120,17 @@
 
         <!-- Stats Display -->
         <div class="flex items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 text-sm">
-          <span class="text-slate-400">Original: <strong id="origSize" class="text-slate-200">0 KB</strong></span>
-          <span class="text-slate-400">Cropped & Compressed: <strong id="newSize" class="text-emerald-400">0 KB</strong></span>
+          <span class="text-slate-400">Original Size: <strong id="origSize" class="text-slate-200">0 KB</strong></span>
+          <span class="text-slate-400">Optimized Size: <strong id="newSize" class="text-emerald-400">0 KB</strong></span>
         </div>
 
         <!-- Action Buttons -->
         <div class="flex gap-3">
-          <button type="button" onclick="resetAll()" class="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 rounded-xl border border-slate-700 transition">
+          <button type="button" onclick="resetAll()" class="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3.5 rounded-xl border border-slate-700 transition">
             Change Image
           </button>
-          <button id="downloadBtn" class="w-2/3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-            <span>Download Cropped File</span>
+          <button id="downloadBtn" class="w-2/3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+            <span>Download Processed File</span>
           </button>
         </div>
 
@@ -125,16 +140,21 @@
 
   </main>
 
-  <footer class="mt-6 text-xs text-slate-500 text-center">
-    ZeroUpload • 100% In-Browser Crop & Compression • Privacy-First
+  <footer class="mt-8 text-xs text-slate-500 text-center">
+    ZeroUpload • Open-Source & Offline Capable • Fast, Simple & Secure
   </footer>
 
   <script>
     const fileInput = document.getElementById('fileInput');
     const uploadBox = document.getElementById('uploadBox');
     const workspace = document.getElementById('workspace');
-    const imageToCrop = document.getElementById('imageToCrop');
     
+    const tabResize = document.getElementById('tabResize');
+    const tabCrop = document.getElementById('tabCrop');
+    const resizeSection = document.getElementById('resizeSection');
+    const cropSection = document.getElementById('cropSection');
+    
+    const imageToCrop = document.getElementById('imageToCrop');
     const widthInput = document.getElementById('widthInput');
     const heightInput = document.getElementById('heightInput');
     const qualityInput = document.getElementById('qualityInput');
@@ -145,8 +165,11 @@
     const newSize = document.getElementById('newSize');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    let cropper = null;
+    let currentMode = 'resize'; // 'resize' or 'crop'
+    let originalImage = new Image();
     let originalFileSize = 0;
+    let originalAspectRatio = 1;
+    let cropper = null;
 
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -157,92 +180,156 @@
 
       const reader = new FileReader();
       reader.onload = (event) => {
+        originalImage.src = event.target.result;
         imageToCrop.src = event.target.result;
-        uploadBox.classList.add('hidden');
-        workspace.classList.remove('hidden');
 
-        if (cropper) {
-          cropper.destroy();
-        }
+        originalImage.onload = () => {
+          widthInput.value = originalImage.naturalWidth;
+          heightInput.value = originalImage.naturalHeight;
+          originalAspectRatio = originalImage.naturalWidth / originalImage.naturalHeight;
 
-        // Initialize Cropper.js
-        cropper = new Cropper(imageToCrop, {
-          aspectRatio: NaN,
-          viewMode: 1,
-          autoCropArea: 0.9,
-          responsive: true,
-          crop(event) {
-            const data = cropper.getData(true);
-            widthInput.value = data.width;
-            heightInput.value = data.height;
-            processAndPreview();
-          }
-        });
+          uploadBox.classList.add('hidden');
+          workspace.classList.remove('hidden');
+
+          switchMode('resize');
+          processResize();
+        };
       };
       reader.readAsDataURL(file);
     });
 
-    function setAspectRatio(ratio) {
+    // Switch between Resize Mode & Crop Mode
+    function switchMode(mode) {
+      currentMode = mode;
+      if (mode === 'resize') {
+        tabResize.className = "flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2";
+        tabCrop.className = "flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center justify-center gap-2";
+        resizeSection.classList.remove('hidden');
+        cropSection.classList.add('hidden');
+        
+        if (cropper) {
+          cropper.destroy();
+          cropper = null;
+        }
+        processResize();
+      } else {
+        tabCrop.className = "flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2";
+        tabResize.className = "flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center justify-center gap-2";
+        resizeSection.classList.add('hidden');
+        cropSection.classList.remove('hidden');
+
+        if (!cropper) {
+          cropper = new Cropper(imageToCrop, {
+            aspectRatio: NaN,
+            viewMode: 1,
+            autoCropArea: 0.9,
+            responsive: true,
+            crop() {
+              processCrop();
+            }
+          });
+        } else {
+          processCrop();
+        }
+      }
+    }
+
+    // --- RESIZE MODE FUNCTIONS ---
+    widthInput.addEventListener('input', () => {
+      if (currentMode === 'resize') {
+        heightInput.value = Math.round(widthInput.value / originalAspectRatio);
+        processResize();
+      }
+    });
+
+    heightInput.addEventListener('input', () => {
+      if (currentMode === 'resize') {
+        widthInput.value = Math.round(heightInput.value * originalAspectRatio);
+        processResize();
+      }
+    });
+
+    function applyPreset(w, h) {
+      widthInput.value = w;
+      heightInput.value = h;
+      processResize();
+    }
+
+    function resetOriginalDimensions() {
+      widthInput.value = originalImage.naturalWidth;
+      heightInput.value = originalImage.naturalHeight;
+      processResize();
+    }
+
+    function processResize() {
+      if (currentMode !== 'resize') return;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      const targetW = parseInt(widthInput.value) || originalImage.naturalWidth;
+      const targetH = parseInt(heightInput.value) || originalImage.naturalHeight;
+
+      canvas.width = targetW;
+      canvas.height = targetH;
+      ctx.drawImage(originalImage, 0, 0, targetW, targetH);
+
+      renderOutput(canvas);
+    }
+
+    // --- CROP MODE FUNCTIONS ---
+    function setAspectRatio(ratio, btnElement) {
       if (!cropper) return;
       cropper.setAspectRatio(ratio);
-      
-      // Update UI active button
-      document.querySelectorAll('.ratio-btn').forEach(btn => {
-        btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-500');
-        btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+
+      document.querySelectorAll('.crop-ratio-btn').forEach(btn => {
+        btn.className = "crop-ratio-btn text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition border border-slate-700";
       });
-      event.target.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
-      event.target.classList.add('bg-indigo-600', 'text-white', 'border-indigo-500');
+      btnElement.className = "crop-ratio-btn text-xs bg-indigo-600 text-white font-medium py-1.5 px-3 rounded-lg transition border border-indigo-500";
     }
 
-    function rotateImage(degree) {
+    function rotateCrop(degree) {
       if (!cropper) return;
       cropper.rotate(degree);
-      processAndPreview();
+      processCrop();
     }
 
-    qualityInput.addEventListener('input', () => {
-      qualityVal.textContent = Math.round(qualityInput.value * 100) + '%';
-      processAndPreview();
-    });
-
-    formatSelect.addEventListener('change', processAndPreview);
-
-    widthInput.addEventListener('change', () => {
-      processAndPreview();
-    });
-
-    heightInput.addEventListener('change', () => {
-      processAndPreview();
-    });
-
-    function processAndPreview() {
-      if (!cropper) return;
-
-      const targetW = parseInt(widthInput.value) || undefined;
-      const targetH = parseInt(heightInput.value) || undefined;
-
+    function processCrop() {
+      if (currentMode !== 'crop' || !cropper) return;
       const croppedCanvas = cropper.getCroppedCanvas({
-        width: targetW,
-        height: targetH,
         imageSmoothingEnabled: true,
         imageSmoothingQuality: 'high'
       });
+      if (croppedCanvas) {
+        renderOutput(croppedCanvas);
+      }
+    }
 
-      if (!croppedCanvas) return;
+    // --- COMMON PROCESSING & DOWNLOAD ---
+    qualityInput.addEventListener('input', () => {
+      qualityVal.textContent = Math.round(qualityInput.value * 100) + '%';
+      triggerCurrentProcess();
+    });
 
+    formatSelect.addEventListener('change', triggerCurrentProcess);
+
+    function triggerCurrentProcess() {
+      if (currentMode === 'resize') processResize();
+      else processCrop();
+    }
+
+    function renderOutput(canvas) {
       const format = formatSelect.value;
       const quality = parseFloat(qualityInput.value);
 
-      croppedCanvas.toBlob((blob) => {
+      canvas.toBlob((blob) => {
         if (!blob) return;
         newSize.textContent = (blob.size / 1024).toFixed(1) + ' KB';
 
         downloadBtn.onclick = () => {
           const link = document.createElement('a');
-          const ext = format === 'image/jpeg' ? 'jpg' : (format === 'image/png' ? 'png' : 'webp');
+          const ext = format.split('/')[1] === 'jpeg' ? 'jpg' : format.split('/')[1];
           link.href = URL.createObjectURL(blob);
-          link.download = `zeroupload-cropped-${Date.now()}.${ext}`;
+          link.download = `zeroupload-${currentMode}-${Date.now()}.${ext}`;
           link.click();
         };
       }, format, quality);
